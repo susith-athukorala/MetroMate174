@@ -110,64 +110,54 @@ function populateTable(tableId, buses, realtime){
 
         const row = document.createElement("tr");
 
-        // Display the arrival time
+
         let arrival = formatTime(bus.arrival_time);
 
-        // Find matching realtime trip
 const trip = realtime.find(
     t => String(t.tripId) === String(bus.trip_id)
 );
 
-console.log(
-    "Timetable trip:",
-    bus.trip_id,
-    "Matched:",
-    trip
-);
-
-let status = "⚪ No live data";
-
 if (trip) {
 
     const update = trip.updates.find(
-    u => Number(u.stopSequence) === Number(bus.stop_sequence)
-);
-
-console.log(
-    "Stop sequence:",
-    bus.stop_sequence,
-    "Update:",
-    update
-);
-
+        u => Number(u.stopSequence) === Number(bus.stop_sequence)
+    );
 
     if (update) {
 
-        const scheduled = Math.round(
-    new Date(bus.arrival_time).getTime() / 1000
-);
+        const scheduled =
+            Math.round(new Date(bus.arrival_time).getTime()/1000);
 
-const delay = Math.round(
-    (update.arrival - scheduled) / 60
-);
+        const delay =
+            Math.round((update.arrival - scheduled)/60);
+
+        // Show predicted arrival time
+        arrival = new Date(update.arrival * 1000)
+            .toLocaleTimeString("en-AU", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
 
         if (Math.abs(delay) <= 1)
-            status = "🟢 On time";
+            arrival += " 🟢";
+
         else if (delay > 0)
-            status = `🔴 +${delay} min`;
+            arrival += ` 🔴 +${delay}`;
+
         else
-            status = `🔵 ${delay} min`;
+            arrival += ` 🔵 ${delay}`;
 
     }
 
 }
 
+
+
         row.innerHTML = `
-            <td>${bus.route_id}</td>
-            <td>${arrival}</td>
-            <td>${badge(bus.min)}</td>
-            <td>${status}</td>
-        `;
+    <td>${bus.route_id}</td>
+    <td>${arrival}</td>
+    <td>${badge(bus.min)}</td>
+`;
 
         tbody.appendChild(row);
 
