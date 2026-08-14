@@ -98,7 +98,7 @@ function populateTable(tableId, buses, realtime){
 
         tbody.innerHTML = `
         <tr>
-            <td colspan="4">
+            <td colspan="3">
                 No Route 174 services
             </td>
         </tr>`;
@@ -151,6 +151,9 @@ if (trip) {
 
 }
 
+if (!trip) {
+    arrival += " 🟡 Scheduled";
+}
 
 
         row.innerHTML = `
