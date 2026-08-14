@@ -4,8 +4,10 @@
 // ======================================
 
 const OUTBOUND_STOP = "12501";
-const INBOUND_STOP = "13284";
+const INBOUND_STOP = "13278";
 
+const REALTIME_API =
+"https://metromate-tripupdates.susithathukorala-8d7.workers.dev/";
 const API =
     "https://api-cloudfront.adelaidemetro.com.au/stops/next-scheduled-services?stop=";
 
@@ -84,19 +86,19 @@ function badge(minutes){
 // Build Table
 // -------------------------------
 
-function populateTable(tableId,buses){
+function populateTable(tableId, buses, realtime){
 
-    const tbody=document.querySelector(
+    const tbody = document.querySelector(
         "#" + tableId + " tbody"
     );
 
-    tbody.innerHTML="";
+    tbody.innerHTML = "";
 
-    if(buses.length===0){
+    if(buses.length === 0){
 
-        tbody.innerHTML=
-        `<tr>
-            <td colspan="3">
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="4">
                 No Route 174 services
             </td>
         </tr>`;
@@ -104,19 +106,67 @@ function populateTable(tableId,buses){
         return;
     }
 
+    buses.forEach(bus => {
 
-    buses.forEach(bus=>{
+        const row = document.createElement("tr");
 
-        const row=document.createElement("tr");
+        // Display the arrival time
+        let arrival = formatTime(bus.arrival_time);
 
-        row.innerHTML=`
+        // Find matching realtime trip
+const trip = realtime.find(
+    t => String(t.tripId) === String(bus.trip_id)
+);
 
+console.log(
+    "Timetable trip:",
+    bus.trip_id,
+    "Matched:",
+    trip
+);
+
+let status = "⚪ No live data";
+
+if (trip) {
+
+    const update = trip.updates.find(
+    u => Number(u.stopSequence) === Number(bus.stop_sequence)
+);
+
+console.log(
+    "Stop sequence:",
+    bus.stop_sequence,
+    "Update:",
+    update
+);
+
+
+    if (update) {
+
+        const scheduled = Math.round(
+    new Date(bus.arrival_time).getTime() / 1000
+);
+
+const delay = Math.round(
+    (update.arrival - scheduled) / 60
+);
+
+        if (Math.abs(delay) <= 1)
+            status = "🟢 On time";
+        else if (delay > 0)
+            status = `🔴 +${delay} min`;
+        else
+            status = `🔵 ${delay} min`;
+
+    }
+
+}
+
+        row.innerHTML = `
             <td>${bus.route_id}</td>
-
-            <td>${formatTime(bus.arrival_time)}</td>
-
+            <td>${arrival}</td>
             <td>${badge(bus.min)}</td>
-
+            <td>${status}</td>
         `;
 
         tbody.appendChild(row);
@@ -162,6 +212,13 @@ async function loadStop(stop){
 
 }
 
+async function loadRealtime() {
+
+    const response = await fetch(REALTIME_API);
+
+    return await response.json();
+
+}
 
 
 // -------------------------------
@@ -169,6 +226,12 @@ async function loadStop(stop){
 // -------------------------------
 
 async function loadDashboard(){
+
+    const realtime =
+    await loadRealtime();
+
+    console.log("Realtime trips:", realtime.length);
+console.log(realtime[0]);
 
     const outbound=
         await loadStop(OUTBOUND_STOP);
@@ -178,12 +241,14 @@ async function loadDashboard(){
 
     populateTable(
         "outboundTable",
-        outbound
+        outbound,
+        realtime
     );
 
     populateTable(
         "inboundTable",
-        inbound
+        inbound,
+        realtime
     );
 
     document.getElementById(
