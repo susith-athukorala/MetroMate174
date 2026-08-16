@@ -58,7 +58,7 @@ function badge(minutes){
 
     let colour="grey";
 
-    if(minutes<=5){
+    if(minutes<=3){
 
         colour="red";
 
@@ -112,6 +112,8 @@ function populateTable(tableId, buses, realtime){
 
 
         let arrival = formatTime(bus.arrival_time);
+        let minutes = bus.min;
+    
 
 const trip = realtime.find(
     t => String(t.tripId) === String(bus.trip_id)
@@ -131,6 +133,15 @@ if (trip) {
         const delay =
             Math.round((update.arrival - scheduled)/60);
 
+        const liveMinutes =
+    Math.max(
+        0,
+        Math.round(
+            (update.arrival * 1000 - Date.now()) / 60000
+        )
+    );
+    minutes = liveMinutes;
+
         // Show predicted arrival time
         arrival = new Date(update.arrival * 1000)
             .toLocaleTimeString("en-AU", {
@@ -138,28 +149,49 @@ if (trip) {
                 minute: "2-digit"
             });
 
-        if (Math.abs(delay) <= 1)
-            arrival += " 🟢";
+        if (Math.abs(delay) <= 1) {
 
-        else if (delay > 0)
-            arrival += ` 🔴 +${delay}`;
+    arrival += " 🟢 On time";
 
-        else
-            arrival += ` 🔵 ${delay}`;
+}
+else if (delay > 0 && delay <= 5) {
+
+    arrival += ` 🟠 ${delay} min late`;
+
+}
+else if (delay > 5) {
+
+    arrival += ` 🔴 ${delay} min late`;
+
+}
+else {
+
+    arrival += ` 🔵 ${Math.abs(delay)} min early`;
+
+}
 
     }
 
 }
 
+
 if (!trip) {
-    arrival += " 🟡 Scheduled";
+
+    const scheduledTime = new Date(bus.arrival_time);
+
+    if (scheduledTime > new Date()) {
+        arrival += " 🟡 Scheduled";
+    } else {
+        arrival += " ⚪ Live unavailable";
+    }
+
 }
 
 
         row.innerHTML = `
     <td>${bus.route_id}</td>
     <td>${arrival}</td>
-    <td>${badge(bus.min)}</td>
+    <td>${badge(minutes)}</td>
 `;
 
         tbody.appendChild(row);
@@ -222,9 +254,6 @@ async function loadDashboard(){
 
     const realtime =
     await loadRealtime();
-
-    console.log("Realtime trips:", realtime.length);
-console.log(realtime[0]);
 
     const outbound=
         await loadStop(OUTBOUND_STOP);
