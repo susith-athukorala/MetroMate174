@@ -3,7 +3,7 @@
 // Adelaide Metro Dashboard
 // ======================================
 
-const OUTBOUND_STOP = "12501";
+const OUTBOUND_STOP = "12429";
 const INBOUND_STOP = "13278";
 
 const REALTIME_API =
