@@ -95,7 +95,7 @@ MetroMate174
 Clone the repository.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/MetroMate174.git
+git clone https://github.com/susith-athukorala/MetroMate174.git
 ```
 
 Open `index.html` in a browser, or deploy the project using GitHub Pages.
@@ -107,8 +107,8 @@ Open `index.html` in a browser, or deploy the project using GitHub Pages.
 Update the stop IDs in `app.js`.
 
 ```javascript
-const OUTBOUND_STOP = "12501";
-const INBOUND_STOP = "13278";
+const OUTBOUND_STOP = "12345";
+const INBOUND_STOP = "54321";
 ```
 
 Replace these with any Adelaide Metro stop IDs.
