@@ -250,16 +250,80 @@ async function loadRealtime() {
 // Load Dashboard
 // -------------------------------
 
+function mergeRealtimeBuses(schedule, realtime) {
+
+    const now = Date.now() / 1000;
+
+    realtime.forEach(trip => {
+
+        const nextStop = trip.updates.find(
+            u => u.arrival > now
+        );
+
+        if (!nextStop) return;
+
+        const exists = schedule.some(
+            s => String(s.trip_id) === String(trip.tripId)
+        );
+
+        if (exists) return;
+
+        schedule.push({
+
+            route_id: trip.route,
+
+            trip_id: trip.tripId,
+
+            stop_sequence: nextStop.stopSequence,
+
+            arrival_time:
+                new Date(nextStop.arrival * 1000)
+                    .toISOString(),
+
+            min:
+                Math.max(
+                    0,
+                    Math.round(
+                        (nextStop.arrival - now) / 60
+                    )
+                )
+
+        });
+
+    });
+
+    schedule.sort(
+        (a,b) =>
+            new Date(a.arrival_time) -
+            new Date(b.arrival_time)
+    );
+
+    return schedule.slice(0,10);
+
+}
+
 async function loadDashboard(){
 
     const realtime =
     await loadRealtime();
 
-    const outbound=
-        await loadStop(OUTBOUND_STOP);
+    let outbound =
+    await loadStop(OUTBOUND_STOP);
 
-    const inbound=
-        await loadStop(INBOUND_STOP);
+let inbound =
+    await loadStop(INBOUND_STOP);
+
+outbound =
+    mergeRealtimeBuses(
+        outbound,
+        realtime
+    );
+
+inbound =
+    mergeRealtimeBuses(
+        inbound,
+        realtime
+    );
 
     populateTable(
         "outboundTable",
