@@ -7,7 +7,7 @@ const OUTBOUND_STOP = "12429";
 const INBOUND_STOP = "13278";
 
 const REALTIME_API =
-"https://metromate-tripupdates.susithathukorala-8d7.workers.dev/";
+"https://metromate-tripupdates.susithathukorala-8d7.workers.dev/?stop=";
 const API =
     "https://api-cloudfront.adelaidemetro.com.au/stops/next-scheduled-services?stop=";
 
@@ -121,57 +121,40 @@ const trip = realtime.find(
 
 if (trip) {
 
-    const update = trip.updates.find(
-        u => Number(u.stopSequence) === Number(bus.stop_sequence)
-    );
-
-    if (update) {
-
-        const scheduled =
-            Math.round(new Date(bus.arrival_time).getTime()/1000);
-
-        const delay =
-            Math.round((update.arrival - scheduled)/60);
-
-        const liveMinutes =
-    Math.max(
-        0,
+    const scheduled =
         Math.round(
-            (update.arrival * 1000 - Date.now()) / 60000
-        )
-    );
+            new Date(bus.arrival_time).getTime() / 1000
+        );
+
+    const delay =
+        Math.round(
+            (trip.arrival - scheduled) / 60
+        );
+
+    const liveMinutes =
+        Math.max(
+            0,
+            Math.round(
+                (trip.arrival * 1000 - Date.now()) / 60000
+            )
+        );
+
     minutes = liveMinutes;
 
-        // Show predicted arrival time
-        arrival = new Date(update.arrival * 1000)
-            .toLocaleTimeString("en-AU", {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
+    arrival = new Date(trip.arrival * 1000)
+        .toLocaleTimeString("en-AU", {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
 
-        if (Math.abs(delay) <= 1) {
-
-    arrival += " 🟢 On time";
-
-}
-else if (delay > 0 && delay <= 5) {
-
-    arrival += ` 🟠 ${delay} min late`;
-
-}
-else if (delay > 5) {
-
-    arrival += ` 🔴 ${delay} min late`;
-
-}
-else {
-
-    arrival += ` 🔵 ${Math.abs(delay)} min early`;
-
-}
-
-    }
-
+    if (Math.abs(delay) <= 1)
+        arrival += " 🟢 On time";
+    else if (delay <= 5)
+        arrival += ` 🟠 ${delay} min late`;
+    else if (delay > 5)
+        arrival += ` 🔴 ${delay} min late`;
+    else
+        arrival += ` 🔵 ${Math.abs(delay)} min early`;
 }
 
 
@@ -237,9 +220,11 @@ async function loadStop(stop){
 
 }
 
-async function loadRealtime() {
+async function loadRealtime(stop) {
 
-    const response = await fetch(REALTIME_API);
+    const response = await fetch(
+        REALTIME_API + stop
+    );
 
     return await response.json();
 
@@ -304,38 +289,29 @@ function mergeRealtimeBuses(schedule, realtime) {
 
 async function loadDashboard(){
 
-    const realtime =
-    await loadRealtime();
-
-    let outbound =
+    const outbound =
     await loadStop(OUTBOUND_STOP);
 
-let inbound =
+const inbound =
     await loadStop(INBOUND_STOP);
 
-outbound =
-    mergeRealtimeBuses(
-        outbound,
-        realtime
-    );
+const outboundRealtime =
+    await loadRealtime(OUTBOUND_STOP);
 
-inbound =
-    mergeRealtimeBuses(
-        inbound,
-        realtime
-    );
+const inboundRealtime =
+    await loadRealtime(INBOUND_STOP);
 
-    populateTable(
-        "outboundTable",
-        outbound,
-        realtime
-    );
+populateTable(
+    "outboundTable",
+    outbound,
+    outboundRealtime
+);
 
-    populateTable(
-        "inboundTable",
-        inbound,
-        realtime
-    );
+populateTable(
+    "inboundTable",
+    inbound,
+    inboundRealtime
+);
 
     document.getElementById(
         "updated"
