@@ -132,12 +132,12 @@ if (trip) {
         );
 
     const liveMinutes =
-        Math.max(
-            0,
-            Math.round(
-                (trip.arrival * 1000 - Date.now()) / 60000
-            )
-        );
+    Math.max(
+        0,
+        Math.ceil(
+            (trip.arrival * 1000 - Date.now()) / 60000
+        )
+    );
 
     minutes = liveMinutes;
 
@@ -147,14 +147,26 @@ if (trip) {
             minute: "2-digit"
         });
 
-    if (Math.abs(delay) <= 1)
-        arrival += " 🟢 On time";
-    else if (delay <= 5)
-        arrival += ` 🟠 ${delay} min late`;
-    else if (delay > 5)
-        arrival += ` 🔴 ${delay} min late`;
-    else
-        arrival += ` 🔵 ${Math.abs(delay)} min early`;
+    if (Math.abs(delay) <= 1) {
+
+    arrival += " 🟢 On time";
+
+}
+else if (delay > 0 && delay <= 5) {
+
+    arrival += ` 🟠 ${delay} min late`;
+
+}
+else if (delay > 5) {
+
+    arrival += ` 🔴 ${delay} min late`;
+
+}
+else {
+
+    arrival += ` 🔵 ${Math.abs(delay)} min early`;
+
+}
 }
 
 
@@ -235,58 +247,6 @@ async function loadRealtime(stop) {
 // Load Dashboard
 // -------------------------------
 
-function mergeRealtimeBuses(schedule, realtime) {
-
-    const now = Date.now() / 1000;
-
-    realtime.forEach(trip => {
-
-        const nextStop = trip.updates.find(
-            u => u.arrival > now
-        );
-
-        if (!nextStop) return;
-
-        const exists = schedule.some(
-            s => String(s.trip_id) === String(trip.tripId)
-        );
-
-        if (exists) return;
-
-        schedule.push({
-
-            route_id: trip.route,
-
-            trip_id: trip.tripId,
-
-            stop_sequence: nextStop.stopSequence,
-
-            arrival_time:
-                new Date(nextStop.arrival * 1000)
-                    .toISOString(),
-
-            min:
-                Math.max(
-                    0,
-                    Math.round(
-                        (nextStop.arrival - now) / 60
-                    )
-                )
-
-        });
-
-    });
-
-    schedule.sort(
-        (a,b) =>
-            new Date(a.arrival_time) -
-            new Date(b.arrival_time)
-    );
-
-    return schedule.slice(0,10);
-
-}
-
 async function loadDashboard(){
 
     const outbound =
@@ -331,5 +291,5 @@ loadDashboard();
 
 setInterval(
     loadDashboard,
-    15000
+    10000
 );
